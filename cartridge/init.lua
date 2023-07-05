@@ -70,7 +70,7 @@ function cartridge.load(filepath)
     assert(contents ~= nil, size_or_error)
 
     cartridge._filepath = filepath
-    cartridge._data = msgpack.unpack(love.filesystem.read(filepath))
+    cartridge._data = msgpack.unpack(contents)
 
     return cartridge
 end
