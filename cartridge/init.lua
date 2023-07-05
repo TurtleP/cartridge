@@ -1,6 +1,6 @@
 ---@class cartridge LÖVE save data module
 ---@field private _data table The data we hold
----@field private _filename string The filename to the save data
+---@field private _filepath string The filepath to the save data
 ---@field private _config { writeOnFlush: true } Configuration
 
 local cartridge =
@@ -29,7 +29,7 @@ local cartridge =
    ]],
 
     _data        = nil,
-    _filename    = nil,
+    _filepath    = nil,
     _config      = { writeOnFlush = true }
 }
 
@@ -37,30 +37,40 @@ local path = (...):gsub("%.init", "")
 local msgpack = require(path .. ".msgpack")
 
 local function export_save()
-    love.filesystem.write(cartridge._filename, msgpack.pack(cartridge._data))
+    love.filesystem.write(cartridge._filepath, msgpack.pack(cartridge._data))
+end
+
+local function setup_config(config)
+    cartridge._config.writeOnFlush = (config and config.writeOnFlush) or true
 end
 
 ---Creates or loads save data
----@param name string The name of the save file
-function cartridge.init(name, config)
-    cartridge._filename = name
-    cartridge._config.writeOnFlush = (config and config.writeOnFlush) or true
+---@param filepath string The filepath to the save file
+---@param config? table The configuration to use for the module
+---@return self
+function cartridge.init(filepath, config)
+    cartridge._filepath = filepath
+    setup_config(config)
 
-    if not love.filesystem.getInfo(name, "file") then
+    if not love.filesystem.getInfo(filepath, "file") then
         cartridge._data = {}
         return cartridge
     end
 
-    return cartridge.load(name)
+    return cartridge.load(filepath)
 end
 
-function cartridge.load(name)
-    assert(love.filesystem.getInfo(name, "file"), ("file '%s' does not exists."):format(name))
+---Loads save data from a file
+---@param filepath string The path to the save file
+---@return self
+function cartridge.load(filepath)
+    assert(love.filesystem.getInfo(filepath, "file"), ("file '%s' does not exist."):format(filepath))
 
-    local contents, size_or_error = love.filesystem.read(name)
+    local contents, size_or_error = love.filesystem.read(filepath)
     assert(contents ~= nil, size_or_error)
 
-    cartridge._data = msgpack.unpack(love.filesystem.read(name))
+    cartridge._filepath = filepath
+    cartridge._data = msgpack.unpack(love.filesystem.read(filepath))
 
     return cartridge
 end
