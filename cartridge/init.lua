@@ -44,32 +44,24 @@ local function setup_config(config)
     cartridge._config.writeOnFlush = (config and config.writeOnFlush) or true
 end
 
----Creates or loads save data
----@param filepath string The filepath to the save file
+---Loads or initializes save data
+---@param filepath string The path to the save file
 ---@param config? table The configuration to use for the module
 ---@return self
-function cartridge.init(filepath, config)
-    cartridge._filepath = filepath
+function cartridge.open(filepath, config)
+    assert(filepath and type(filepath) == "string", ("bad argument #1: expected string, got %s"):format(filepath))
     setup_config(config)
+
+    cartridge._filepath = filepath
 
     if not love.filesystem.getInfo(filepath, "file") then
         cartridge._data = {}
         return cartridge
     end
 
-    return cartridge.load(filepath)
-end
-
----Loads save data from a file
----@param filepath string The path to the save file
----@return self
-function cartridge.load(filepath)
-    assert(love.filesystem.getInfo(filepath, "file"), ("file '%s' does not exist."):format(filepath))
-
     local contents, size_or_error = love.filesystem.read(filepath)
     assert(contents ~= nil, size_or_error)
 
-    cartridge._filepath = filepath
     cartridge._data = msgpack.unpack(contents)
 
     return cartridge
